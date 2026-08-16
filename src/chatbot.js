@@ -44,21 +44,17 @@ function openNexus() {
         return;
     }
 
-
     nexusChat.classList.add('open');
-
 
     nexusToggle?.setAttribute(
         'aria-expanded',
         'true'
     );
 
-
     nexusWindow?.setAttribute(
         'aria-hidden',
         'false'
     );
-
 
     setTimeout(() => {
 
@@ -79,15 +75,12 @@ function closeNexus() {
         return;
     }
 
-
     nexusChat.classList.remove('open');
-
 
     nexusToggle?.setAttribute(
         'aria-expanded',
         'false'
     );
-
 
     nexusWindow?.setAttribute(
         'aria-hidden',
@@ -203,7 +196,6 @@ function formatAnswer(text) {
         return '';
     }
 
-
     let answer =
         escapeHTML(text);
 
@@ -272,7 +264,6 @@ function addMessage(
 
 
     label.textContent =
-
         role === 'user'
             ? 'YOU'
             : 'NEXUS';
@@ -409,12 +400,14 @@ async function sendMessage(
     }
 
 
+    // Add user message to UI
     addMessage(
         'user',
         cleanedMessage
     );
 
 
+    // Save user message in conversation history
     conversationHistory.push({
 
         role:
@@ -426,35 +419,52 @@ async function sendMessage(
     });
 
 
+    // Clear input
     nexusInput.value =
         '';
 
 
+    // Disable send button
     nexusSend.disabled =
         true;
 
 
+    // Show typing indicator
     const typing =
         addTypingIndicator();
 
 
     try {
 
+        // ====================================================
+        // NETLIFY API
+        // ====================================================
+        //
+        // IMPORTANT:
+        // Do NOT use:
+        //
+        // http://localhost:3000/api/chat
+        //
+        // On Netlify we use:
+        //
+        // /api/chat
+        //
+        // Netlify will route this request to:
+        //
+        // netlify/functions/chat.js
+        //
+        // ====================================================
+
         const response =
             await fetch(
-
-                'http://localhost:3000/api/chat',
-
+                '/api/chat',
                 {
-
                     method:
                         'POST',
 
                     headers: {
-
                         'Content-Type':
                             'application/json'
-
                     },
 
                     body:
@@ -468,21 +478,37 @@ async function sendMessage(
                                     .slice(-8)
 
                         })
-
                 }
-
             );
 
 
-        const data =
-            await response.json();
+        // Try to parse response
+        let data = {};
+
+        try {
+
+            data =
+                await response.json();
+
+        }
+
+        catch (jsonError) {
+
+            console.error(
+                'NEXUS JSON error:',
+                jsonError
+            );
+
+        }
 
 
+        // Remove typing indicator
         removeTypingIndicator(
             typing
         );
 
 
+        // Handle HTTP errors
         if (
             !response.ok
         ) {
@@ -490,24 +516,27 @@ async function sendMessage(
             throw new Error(
 
                 data.error ||
-                'Unable to get a response.'
+                `Server error (${response.status})`
 
             );
 
         }
 
 
+        // Get answer
         const answer =
             data.answer ||
             'I could not generate a response.';
 
 
+        // Add NEXUS response
         addMessage(
             'bot',
             answer
         );
 
 
+        // Save assistant response
         conversationHistory.push({
 
             role:
@@ -519,6 +548,7 @@ async function sendMessage(
         });
 
     }
+
 
     catch (error) {
 
@@ -533,11 +563,27 @@ async function sendMessage(
         );
 
 
-        const errorMessage =
-
-            error.message ||
-
+        let errorMessage =
             'Something went wrong while contacting NEXUS.';
+
+
+        if (
+            error instanceof TypeError
+        ) {
+
+            errorMessage =
+                'Unable to connect to the NEXUS server. Please try again.';
+
+        }
+
+        else if (
+            error?.message
+        ) {
+
+            errorMessage =
+                error.message;
+
+        }
 
 
         addMessage(
@@ -547,12 +593,15 @@ async function sendMessage(
 
     }
 
+
     finally {
 
+        // Enable send button again
         nexusSend.disabled =
             false;
 
 
+        // Focus input
         nexusInput?.focus();
 
     }
@@ -665,6 +714,7 @@ nexusWindow?.setAttribute(
     'aria-hidden',
     'true'
 );
+
 
 nexusToggle?.setAttribute(
     'aria-expanded',
