@@ -457,7 +457,7 @@ async function sendMessage(
 
         const response =
             await fetch(
-                '/api/chat',
+                '/.netlify/functions/chat',
                 {
                     method:
                         'POST',
