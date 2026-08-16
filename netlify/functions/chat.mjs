@@ -6,7 +6,7 @@ import { GoogleGenAI } from "@google/genai";
 // ============================================================
 
 const ai = new GoogleGenAI({
-    apiKey: process.env.GEMINI_API_KEY || "gemini-2.5-flash",
+    apiKey: process.env.GEMINI_API_KEY
 });
 
 
@@ -416,17 +416,10 @@ Answer directly.
         // CALL GEMINI
         // ----------------------------------------------------
 
-        const result =
-            await ai.models.generateContent({
-
-                model:
-                    "gemini-3.6-flash",
-
-                contents:
-                    prompt
-
-            });
-
+const result = await ai.models.generateContent({
+    model: process.env.GEMINI_MODEL || "gemini-2.5-flash",
+    contents: prompt
+});
 
         const answer =
             result.text ||
