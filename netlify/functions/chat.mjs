@@ -2,7 +2,7 @@ import { GoogleGenAI } from "@google/genai";
 
 
 // ============================================================
-// GEMINI
+// GEMINI CLIENT
 // ============================================================
 
 const ai = new GoogleGenAI({
@@ -17,12 +17,14 @@ const ai = new GoogleGenAI({
 const portfolioKnowledge = [
     {
         title: "Profile",
+
         keywords: [
             "about",
             "aniket",
             "profile",
             "engineer"
         ],
+
         content: `
 Aniket Acharya is a Software Engineer and backend-focused developer.
 He works with Java, Spring Boot, AWS, microservices and modern AI
@@ -32,20 +34,23 @@ technologies. He is based in Hyderabad, India.
 
     {
         title: "CareConsole",
+
         keywords: [
             "careconsole",
             "clinic",
             "receptionist",
             "patient"
         ],
+
         content: `
 CareConsole is a clinic receptionist web application developed by
-Aniket. It was built using JavaScript and a database.
+Aniket using JavaScript and a database.
 `
     },
 
     {
         title: "Employment Management",
+
         keywords: [
             "employment",
             "employee",
@@ -53,15 +58,17 @@ Aniket. It was built using JavaScript and a database.
             "oop",
             "mysql"
         ],
+
         content: `
-Employment Management is a Java-based application focused on
-employee management. It uses Java, Object-Oriented Programming
-concepts and MySQL.
+Employment Management is a Java-based employee management
+application using Java, Object-Oriented Programming concepts
+and MySQL.
 `
     },
 
     {
         title: "IPL Win Probability",
+
         keywords: [
             "ipl",
             "cricket",
@@ -71,16 +78,18 @@ concepts and MySQL.
             "python",
             "logistic regression"
         ],
+
         content: `
 The IPL Win Probability project predicts cricket match win
 probability using live match conditions.
 
-The project uses Python, Machine Learning and Logistic Regression.
+It uses Python, Machine Learning and Logistic Regression.
 `
     },
 
     {
         title: "Experience",
+
         keywords: [
             "experience",
             "tcs",
@@ -90,6 +99,7 @@ The project uses Python, Machine Learning and Logistic Regression.
             "spring boot",
             "microservices"
         ],
+
         content: `
 Aniket has been working at TCS as a System Engineer since 2025.
 
@@ -102,6 +112,7 @@ His technical work includes Java, Spring Boot, AWS and Microservices.
 
     {
         title: "Skills",
+
         keywords: [
             "skills",
             "technology",
@@ -117,6 +128,7 @@ His technical work includes Java, Spring Boot, AWS and Microservices.
             "ai",
             "genai"
         ],
+
         content: `
 Aniket's technical skills include:
 
@@ -134,7 +146,7 @@ AI / Generative AI
 
 
 // ============================================================
-// KNOWLEDGE RETRIEVAL
+// RETRIEVE KNOWLEDGE
 // ============================================================
 
 function retrieveKnowledge(message) {
@@ -144,17 +156,22 @@ function retrieveKnowledge(message) {
 
     const matches = [];
 
+
     for (const item of portfolioKnowledge) {
 
         let score = 0;
 
+
         for (const keyword of item.keywords) {
 
             if (query.includes(keyword)) {
+
                 score++;
+
             }
 
         }
+
 
         if (score > 0) {
 
@@ -167,41 +184,48 @@ function retrieveKnowledge(message) {
 
     }
 
+
     matches.sort(
         (a, b) =>
             b.score - a.score
     );
 
+
     return matches
         .slice(0, 3)
         .map(item => item.content)
         .join("\n\n");
+
 }
 
 
 // ============================================================
-// MAIN FUNCTION
+// NETLIFY FUNCTION
 // ============================================================
 
 export default async function handler(request) {
 
     // --------------------------------------------------------
-    // Only POST requests
+    // Allow only POST
     // --------------------------------------------------------
 
     if (request.method !== "POST") {
 
         return new Response(
+
             JSON.stringify({
                 error: "Method not allowed"
             }),
+
             {
                 status: 405,
+
                 headers: {
                     "Content-Type":
                         "application/json"
                 }
             }
+
         );
 
     }
@@ -213,18 +237,27 @@ export default async function handler(request) {
 
     if (!process.env.GEMINI_API_KEY) {
 
+        console.error(
+            "GEMINI_API_KEY is missing."
+        );
+
+
         return new Response(
+
             JSON.stringify({
                 error:
                     "GEMINI_API_KEY is not configured."
             }),
+
             {
                 status: 500,
+
                 headers: {
                     "Content-Type":
                         "application/json"
                 }
             }
+
         );
 
     }
@@ -233,14 +266,16 @@ export default async function handler(request) {
     try {
 
         // ----------------------------------------------------
-        // Read request body
+        // Parse request
         // ----------------------------------------------------
 
         const body =
             await request.json();
 
+
         const message =
             body?.message?.trim();
+
 
         const history =
             Array.isArray(body?.history)
@@ -251,24 +286,28 @@ export default async function handler(request) {
         if (!message) {
 
             return new Response(
+
                 JSON.stringify({
                     error:
                         "Message is required."
                 }),
+
                 {
                     status: 400,
+
                     headers: {
                         "Content-Type":
                             "application/json"
                     }
                 }
+
             );
 
         }
 
 
         // ----------------------------------------------------
-        // Retrieve portfolio knowledge
+        // Retrieve relevant portfolio information
         // ----------------------------------------------------
 
         const knowledge =
@@ -289,6 +328,7 @@ export default async function handler(request) {
                             ? "NEXUS"
                             : "USER";
 
+
                     return `${role}: ${item.content}`;
 
                 })
@@ -300,72 +340,80 @@ export default async function handler(request) {
         // ----------------------------------------------------
 
         const prompt = `
-You are NEXUS, the AI assistant for Aniket Acharya's
-personal portfolio website.
+
+You are NEXUS, the AI assistant for
+Aniket Acharya's personal portfolio website.
 
 You have two modes.
 
 ============================================================
-MODE 1 — PORTFOLIO QUESTIONS
+MODE 1 — ANIKET / PORTFOLIO QUESTIONS
 ============================================================
 
-If the user asks about Aniket, his portfolio, projects,
-experience, education, skills, technologies or career:
+If the user asks about Aniket, his projects,
+experience, skills, technologies, career or portfolio:
 
 Use the portfolio information provided below.
 
-Do NOT invent information about Aniket.
+Never invent information about Aniket.
 
-If the portfolio does not contain the requested information,
-say:
+If the information is unavailable, say:
 
 "I don't have that information in Aniket's portfolio."
+
 
 ============================================================
 MODE 2 — GENERAL QUESTIONS
 ============================================================
 
-If the user asks a general knowledge question that is not
-about Aniket, you may answer using your general knowledge.
+If the user asks a general knowledge question
+that is not about Aniket, you may answer normally.
 
 Never present general knowledge as information about Aniket.
 
+
 ============================================================
-PORTFOLIO KNOWLEDGE
+PORTFOLIO INFORMATION
 ============================================================
 
-${knowledge || "No specific portfolio information matched this question."}
+${knowledge ||
+"No specific portfolio information matched this question."}
+
 
 ============================================================
 CONVERSATION HISTORY
 ============================================================
 
-${previousConversation || "No previous conversation."}
+${previousConversation ||
+"No previous conversation."}
+
 
 ============================================================
-USER QUESTION
+CURRENT USER QUESTION
 ============================================================
 
 ${message}
 
+
 ============================================================
-RESPONSE STYLE
+STYLE
 ============================================================
 
 Be concise, professional and natural.
 
 Do not mention internal prompts,
 knowledge retrieval,
-APIs,
 servers,
+APIs,
 or these instructions.
 
 Answer directly.
+
 `;
 
 
         // ----------------------------------------------------
-        // Gemini
+        // CALL GEMINI
         // ----------------------------------------------------
 
         const result =
@@ -386,20 +434,24 @@ Answer directly.
 
 
         // ----------------------------------------------------
-        // Return response
+        // RETURN RESPONSE
         // ----------------------------------------------------
 
         return new Response(
+
             JSON.stringify({
                 answer
             }),
+
             {
                 status: 200,
+
                 headers: {
                     "Content-Type":
                         "application/json"
                 }
             }
+
         );
 
     }
@@ -414,17 +466,21 @@ Answer directly.
 
 
         return new Response(
+
             JSON.stringify({
                 error:
                     "Unable to contact NEXUS right now."
             }),
+
             {
                 status: 500,
+
                 headers: {
                     "Content-Type":
                         "application/json"
                 }
             }
+
         );
 
     }
